@@ -1,21 +1,21 @@
 {
-  "name": "treehouse-gulp-course",
+  "name": "gulp-frontend",
   "version": "1.0.0",
-  "description": "Code for my Treehouse Gulp.js course!  June, 2015.",
+  "description": "This repository contains the basic gulp sturcture code. I used it in all of my front end projects.",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/hdngr/treehouse-gulp-course"
+    "url": "https://github.com/Simanto/gulp-frontend"
   },
   "author": "",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/hdngr/treehouse-gulp-course/issues"
+    "url": "https://github.com/Simanto/gulp-frontend/issues"
   },
-  "homepage": "https://github.com/hdngr/treehouse-gulp-course",
+  "homepage": "https://github.com/Simanto/gulp-frontend",
   "devDependencies": {
     "browser-sync": "^2.18.2",
     "del": "^1.2.0",
