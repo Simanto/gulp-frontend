@@ -19,16 +19,17 @@ var
   cssnano = require('gulp-cssnano'),
   clone = require('gulp-clone'),
   sourcemaps = require('gulp-sourcemaps'),
+  browserSync = require('browser-sync').create(),
 
 
 // In development mode. change to production for diployment
   devBuild = (process.env.NODE_ENV !== 'production'),
 
-  // folders
-  folder = {
-    src: 'src/',
-    build: 'build/'
-  };
+// folders
+folder = {
+  src: 'src/',
+  build: 'build/'
+};
 
 // image processing
 gulp.task('img', function() {
@@ -70,7 +71,8 @@ gulp.task('sass', function() {
       errLogToConsole: true
     }))
     .pipe(postcss(postCssOpts))
-    .pipe(gulp.dest(folder.src + 'css/' ));
+    .pipe(gulp.dest(folder.src + 'css/' ))
+    .pipe(browserSync.reload({stream: true}));
 });
 
 // Copy Css to Build
@@ -112,24 +114,32 @@ gulp.task('js', function() {
 gulp.task('html', ['img'], function() {
   var
     out = folder.build ,
-    page = gulp.src(folder.src + '/*.html')
+    page = gulp.src(folder.src + '*.html')
       .pipe(newer(out));
 
   // // minify production code
-  // if (!devBuild) {
-  //   page = page.pipe(htmlclean());
-  // }
+  if (!devBuild) {
+    page = page.pipe(htmlclean());
+  }
 
   return page.pipe(gulp.dest(out));
 });
 
 
-// run all tasks
+// run build tasks
 gulp.task('build', ['html','img', 'fonts', 'minCss', 'js']);
 
 
+// Starts browser-sync task for starting the server.
+gulp.task('browser-sync', function() {
+  browserSync.init({
+      server: {
+          baseDir: "./src/" // loading files from src folder
+      }
+  });
+});
 // watch for changes
-gulp.task('watch', function() {
+gulp.task('watch', ['browser-sync'], function(){
 
   // image changes
   gulp.watch(folder.src + 'img/**/*');
@@ -144,6 +154,6 @@ gulp.task('watch', function() {
   gulp.watch(folder.src + 'js/**/*');
 
   // html changes
-  gulp.watch(folder.src + 'html/**/*');
+  gulp.watch(folder.src + 'html/**/*').on('change', browserSync.reload);
 
 });

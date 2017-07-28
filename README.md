@@ -3,28 +3,15 @@ This repository contains the basic gulp sturcture code. I used it in all of my f
 
 ## What You Can DO
 
-1) Compile SCSS and Concat Js
+1) Start Gulp
 ```
 gulp watch
 ```
 2) Get it ready for staging
 ```
-gulp stage
-```
-3) To Build Your Project For Product. 
-```
 gulp build
 ```
 *It also minify your css and js, you need to add minify version into your html files *
-
-4) Delete files to clean build dir
-```
-gulp clean
-```
-5) Clean and Build for delivery
-```
-gulp default
-```
 
 
 ## Quick Start
@@ -34,18 +21,26 @@ git clone @git.url
 ```
 Step 2 - Install the project's node dependencies
 ```
-npm install
+gulp watch
 ```
 
 # Package List
 
-gulp-concat
+gulp
+gulp-newer
+ulp-imagemin
+ulp-concat
+gulp-deporder
+gulp-strip-debug
 gulp-uglify
+gulp-plumber
+gulp-sass')
+gulp-postcss
+postcss-assets
+autoprefixer
+css-mqpacker
 gulp-rename
-gulp-sass
+gulp-cssnano
+gulp-clone
 gulp-sourcemaps
-gulp-autoprefixer
-gulp-uglifycss
 browser-sync
-gulp-swig
-del
