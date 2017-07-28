@@ -1,115 +1,149 @@
-"use strict";
+// Gulp.js configuration
 
-    var gulp  = require('gulp'),
-      concat  = require('gulp-concat'),
-      uglify  = require('gulp-uglify'),
-      rename  = require('gulp-rename'),
-        sass  = require('gulp-sass'),
-        maps  = require('gulp-sourcemaps'),
-autoprefixer  = require('gulp-autoprefixer'),
-autoprefixerOptions = {browsers: ['last 2 versions', '> 5%', 'Firefox ESR']},
-   uglifycss  = require('gulp-uglifycss'),
- browserSync  = require('browser-sync'),
-        swig  = require('gulp-swig'),
-      reload  = browserSync.reload,
-         del  = require('del');
+var
+  // modules
+  gulp = require('gulp'),
+  newer = require('gulp-newer'),
+  imagemin = require('gulp-imagemin'),
+  concat = require('gulp-concat'),
+  deporder = require('gulp-deporder'),
+  stripdebug = require('gulp-strip-debug'),
+  uglify = require('gulp-uglify'),
+  plumber = require('gulp-plumber'),
+  sass = require('gulp-sass'),
+  postcss = require('gulp-postcss'),
+  assets = require('postcss-assets'),
+  autoprefixer = require('autoprefixer'),
+  mqpacker = require('css-mqpacker'),
+  rename = require("gulp-rename"),  
+  cssnano = require('gulp-cssnano'),
+  clone = require('gulp-clone'),
+  sourcemaps = require('gulp-sourcemaps'),
 
 
-// Compile All Js includes in src into single app.js
-gulp.task("concatScripts", function() {
-    return gulp.src([
-        'js/jquery.js',
-        'js/sticky/jquery.sticky.js',
-        'js/main.js'
-        ])
-    .pipe(maps.init())
-    .pipe(concat('app.js'))
-    .pipe(maps.write('./'))
-    .pipe(gulp.dest('js'))
-    .pipe(reload({stream: true}));
+// In development mode. change to production for diployment
+  devBuild = (process.env.NODE_ENV !== 'production'),
+
+  // folders
+  folder = {
+    src: 'src/',
+    build: 'build/'
+  };
+
+// image processing
+gulp.task('img', function() {
+  var build = folder.build + 'img/';
+  return gulp.src(folder.src + 'img/**/*')
+    .pipe(newer(build))
+    .pipe(imagemin({ optimizationLevel: 5 }))
+    .pipe(gulp.dest(build));
+});
+
+// Copy font files
+gulp.task('fonts', function() {
+  var build = folder.build + 'fonts/';
+  return gulp.src(folder.src + 'fonts/**/*')
+    .pipe(newer(build))
+    .pipe(gulp.dest(build));
 });
 
 
-// Minify Compiled Java Scripts
-gulp.task("minifyScripts", ["concatScripts"], function() {
-  return gulp.src("js/app.js")
-    .pipe(uglify())
-    .pipe(rename('app.min.js'))
-    .pipe(gulp.dest('js'));
-});
+// CSS processing
+gulp.task('sass', function() {
 
+  var postCssOpts = [
+  assets({ loadPaths: ['images/'] }),
+  autoprefixer({ browsers: ['last 2 versions', '> 2%'] }),
+  mqpacker
+  ];
 
-// Compile SCSS to CSS
-gulp.task('compileSass', function() {
-    return gulp.src("scss/style.scss")
-        .pipe(maps.init())
-        .pipe(sass())
-        .pipe(autoprefixer())
-        .pipe(maps.write('./'))
-        .pipe(gulp.dest('css'))
-        .pipe(reload({stream: true}));
-});
+  if (!devBuild) {
+    postCssOpts.push(cssnano);
+  }
 
-// Minify CSS in to one line
-gulp.task('minifyCss', ['compileSass'], function () {
-  gulp.src('css/style.css')
-    .pipe(uglifycss({
-      "uglyComments": true
+  return gulp.src(folder.src + 'scss/style.scss')
+    .pipe(sourcemaps.init({loadMaps: true}))
+    .pipe(sass({
+      outputStyle: 'nested',
+      imagePath: 'images/',
+      precision: 3,
+      errLogToConsole: true
     }))
-    .pipe(rename('style.min.css'))
-    .pipe(gulp.dest('css'));
+    .pipe(postcss(postCssOpts))
+    .pipe(gulp.dest(folder.src + 'css/' ));
+});
+
+// Copy Css to Build
+gulp.task('copyCss', ['sass'], function(){
+  return gulp.src(folder.src + 'css/style.css')
+    .pipe(gulp.dest(folder.build + 'css/'));
+});
+
+// Minify Css
+gulp.task('minCss', ['copyCss'], function(){
+  return gulp.src(folder.src + 'css/style.css')
+    .pipe(sourcemaps.init({loadMaps: true}))
+    .pipe(plumber())
+    .pipe(rename({suffix: '.min'}))
+    .pipe(cssnano({discardComments: {removeAll: true}}))
+    .pipe(gulp.dest(folder.build + 'css/'));
 });
 
 
-// Compile and Sync With browser
-gulp.task('watchFiles', function() {
-  browserSync({
-        server: "./"
-    });
-  gulp.watch('scss/**/*.scss', ['compileSass']);
-  gulp.watch('js/main.js', ['concatScripts']);
-  gulp.watch('*.html', ['templates']);
-})
+// JavaScript processing
+gulp.task('js', function() {
 
+  var jsbuild = gulp.src(folder.src + 'js/**/*')
+    .pipe(deporder())
+    .pipe(uglify())
+    .pipe(concat('theme.js'));
 
+  if (!devBuild) {
+    jsbuild = jsbuild
+      .pipe(stripdebug())
+      .pipe(uglify());
+  }
 
-// Swig templates: Watch changed in html files
-gulp.task('templates', function() {
-    return gulp.src('*.html')
-        .pipe(swig())
-        .pipe(gulp.dest('./stage'))
-        .pipe(reload({stream: true}));
+  return jsbuild.pipe(gulp.dest(folder.build + 'js/'));
+
+});
+
+// HTML processing
+gulp.task('html', ['img'], function() {
+  var
+    out = folder.build ,
+    page = gulp.src(folder.src + '/*.html')
+      .pipe(newer(out));
+
+  // // minify production code
+  // if (!devBuild) {
+  //   page = page.pipe(htmlclean());
+  // }
+
+  return page.pipe(gulp.dest(out));
 });
 
 
-
-// Delete .min files and also stage and dist directory
-gulp.task('clean', function() {
-  del(['dist', 'css/style.min.css*', 'js/app*.js*', 'stage']);
-});
+// run all tasks
+gulp.task('build', ['html','img', 'fonts', 'minCss', 'js']);
 
 
-// Compiles files for distribution
-gulp.task("build", ['minifyScripts', 'minifyCss'], function() {
-  return gulp.src(['css/style.min.css', 'js/app.min.js', '*.html',  'img/**', 'fonts/**'], { base: './'})
-            .pipe(gulp.dest('dist'));
-});
+// watch for changes
+gulp.task('watch', function() {
 
+  // image changes
+  gulp.watch(folder.src + 'img/**/*');
 
-// Watch and Compile file to Stage Directory for Staging Server
-gulp.task("stage", ['watchFiles'], function() {
-  return gulp.src([
-    "css/style.css", "js/app.js", "*.html", "img/**", "fonts/**"
-    ],
-    { base: './'})
-  .pipe(gulp.dest('stage'));
-});
+  // font changes
+  gulp.watch(folder.src + 'font/**/*');
 
-// Watch Changes
-gulp.task('watch', ['watchFiles']);
+  // css changes
+  gulp.watch(folder.src + 'scss/**/*', ['sass']);
 
+  // javascript changes
+  gulp.watch(folder.src + 'js/**/*');
 
-// Clean and Compile All The Files For Distribution
-gulp.task("kick", ["clean"], function() {
-  gulp.start('build');
+  // html changes
+  gulp.watch(folder.src + 'html/**/*');
+
 });
