@@ -1,0 +1,18 @@
+// ==========================================================================
+// Header and Navigation styles
+// ==========================================================================
+header {
+    margin: 25px 15px;
+}
+
+.nav-primary {
+    margin: 0;
+    height: 50px;
+    li {
+        display: inline-block;
+        a {
+            line-height: 50px;
+            padding: 0 30px;
+        }
+    }
+}
