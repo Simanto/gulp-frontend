@@ -4,6 +4,7 @@
     box-sizing: border-box;
 }
 
+
 body {
     @include text(1em, 1.5, $color: $color-text-base);
     margin: 0;
@@ -38,7 +39,6 @@ ol {
 li {
     margin-bottom: 10px;
 }
-
 
 /* Pseudo-classes ------------------ */
 
