@@ -48,17 +48,25 @@ const config = {
 * Assets related tasks
 */
 
-gulp.task('font', () => {
+gulp.task('font', function() {
     return gulp.src(config.src.font)
     .pipe(gulp.dest(`${config.dist}/font`));
 });
 
-gulp.task('img', () => {
+// gulp.task('font:watch', gulp.parallel('font', function() {
+//     browserSync.reload();
+// }));
+
+gulp.task('img', function() {
     gulp.src(config.src.img)
         .pipe( imagemin() )
         .pipe(gulp.dest(`${config.src.root}/img`))
         .pipe(gulp.dest(`${config.dist}/img`));
 });
+
+// gulp.task('img:watch', ['img'], function() {
+//     browserSync.reload();
+// })
 
 gulp.task( 'sass', function() {
     var stream = gulp.src(`${config.src.styles}`)
@@ -86,16 +94,16 @@ gulp.task( 'sass', function() {
     return stream;
 });
 
-gulp.task('sass:watch', () => {
-    gulp.watch('./src/sass/**/*.scss', ['styles']);
-});
+gulp.task('sass:watch', gulp.parallel('sass', function() {
+    gulp.watch('./src/sass/**/*.scss');
+}));
 
 gulp.task('clean', del.bind(null, [config.dist]));
 
 /**
- * Serve assets
- */
-gulp.task('serve:dev', () => {
+***   Serve assets
+**/
+gulp.task('serve:dev', function() {
     browserSync({
       port: config.browserSync.port,
       server: {
@@ -112,7 +120,7 @@ gulp.task('serve:dev', () => {
     });
   });
 
-  gulp.task('serve:dist', () => {
+gulp.task('serve:dist', function() {
     browserSync({
       port: config.browserSync.port,
       server: {
@@ -122,30 +130,30 @@ gulp.task('serve:dev', () => {
       logFileChanges: true,
       notify: true
     });
-  });
+});
 
-  gulp.task('watch', () => {
-    gulp.watch(config.src.markdown, ['markdown']);
-    gulp.watch(`${config.src.styles}/**/*.scss`, ['styles']);
-  });
+gulp.task('watch', function() {
+gulp.watch(config.src.markdown, ['markdown']);
+gulp.watch(`${config.src.styles}/**/*.scss`, ['styles']);
+});
 
 
 /**
 * Build tasks
 */
-gulp.task('build', cb => {
-runSequence('clean', ['styles','font', 'img'],  cb);
+gulp.task('build', function() {
+    runSequence('clean', ['styles','font', 'img'],  cb);
 });
 
-gulp.task('dev', cb => {
-runSequence('clean', ['styles', 'font'], 'serve:dev', 'watch', cb);
+gulp.task('dev', function() {
+    runSequence('clean', ['styles', 'font'], 'serve:dev', 'watch', cb);
 });
   
 /**
 * Check production-ready code before deploying it to gh-pages
 */
 
-gulp.task('dev:dist', cb => {
+gulp.task('dev:dist', function() {
     runSequence('build', 'serve:dist', cb);
 });
 
