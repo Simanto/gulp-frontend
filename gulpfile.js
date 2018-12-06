@@ -10,12 +10,15 @@ sass = require('gulp-sass'),
 markdown = require('gulp-markdown'),
 cleanCSS = require('gulp-clean-css'),
 sourcemaps = require('gulp-sourcemaps'),
+imagemin = require( 'gulp-imagemin' ),
 inject = require('gulp-inject'),
 useref = require('gulp-useref'),
 runSequence = require('run-sequence'),
 runSequence = require('gulp-if'),
 del = require('del'),
 browserSync = require('browser-sync'),
+rename = require("gulp-rename"),
+plugins = require('gulp-load-plugins'),
 
 
 // In development mode. change to production for diployment
@@ -29,7 +32,7 @@ const config = {
         markdown: './readme.md',
         html: './src/*.html',
         font: './src/font/**/*',
-        img: './src/img/**/*'
+        img: './src/img/main/**/*'
     },
     dist: './build',
     browserSync: {
@@ -51,8 +54,10 @@ gulp.task('font', () => {
 });
 
 gulp.task('img', () => {
-    return gulp.src(config.src.img)
-    .pipe(gulp.dest(`${config.dist}/img`));
+    gulp.src(config.src.img)
+        .pipe( imagemin() )
+        .pipe(gulp.dest(`${config.src.root}/img`))
+        .pipe(gulp.dest(`${config.dist}/img`));
 });
 
 gulp.task( 'sass', function() {
@@ -69,12 +74,21 @@ gulp.task( 'sass', function() {
         .pipe(sourcemaps.write(undefined, { sourceRoot: null }))
         .pipe(gulp.dest(`${config.src.root}/css`))
         .pipe(gulp.dest(`${config.dist}/css`))
+
+        .pipe(cleanCSS({debug: true}, (details) => {
+            console.log(`${details.name}: ${details.stats.originalSize}`);
+            console.log(`${details.name}: ${details.stats.minifiedSize}`);
+        }))
+
+        .pipe( rename( { suffix: '.min' } ) )
+        .pipe(gulp.dest(`${config.dist}/css`))
+        .pipe(gulp.dest(`${config.src.root}/css`))
     return stream;
 });
 
 gulp.task('sass:watch', () => {
     gulp.watch('./src/sass/**/*.scss', ['styles']);
-  });
+});
 
 gulp.task('clean', del.bind(null, [config.dist]));
 
