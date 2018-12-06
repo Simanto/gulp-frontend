@@ -4,8 +4,10 @@
 var
 // modules
 gulp = require('gulp'),
-markdown = require('gulp-markdown'),
+plumber = require('gulp-plumber'),
+autoprefixer = require('gulp-autoprefixer'),
 sass = require('gulp-sass'),
+markdown = require('gulp-markdown'),
 cleanCSS = require('gulp-clean-css'),
 sourcemaps = require('gulp-sourcemaps'),
 inject = require('gulp-inject'),
@@ -23,9 +25,9 @@ devBuild = (process.env.NODE_ENV !== 'production');
 const config = {
     src: {
         root: './src',
-        styles: './src/sass',
+        styles: './src/sass/style.scss',
         markdown: './readme.md',
-        html: './src/index.html',
+        html: './src/*.html',
         font: './src/font/**/*',
         img: './src/img/**/*'
     },
@@ -53,18 +55,21 @@ gulp.task('img', () => {
     .pipe(gulp.dest(`${config.dist}/img`));
 });
 
-gulp.task('styles', () => {
-    gulp.src(`${config.src.styles}/style.scss`)
-    .pipe(sourcemaps.init())
-    .pipe(sass().on('error', sass.logError))
-    .pipe(sourcemaps.write())
-    .pipe(cleanCSS({debug: true}, (details) => {
-        console.log(`${details.name}: ${details.stats.originalSize}`);
-        console.log(`${details.name}: ${details.stats.minifiedSize}`);
-    }))
-    .pipe(gulp.dest(`${config.src.root}/css`))
-    .pipe(gulp.dest(`${config.dist}/css`))
-    .pipe(browserSync.reload({ stream: true }));
+gulp.task( 'sass', function() {
+    var stream = gulp.src(`${config.src.styles}`)
+        .pipe( plumber( {
+            errorHandler: function( err ) {
+                console.log( err );
+                this.emit( 'end' );
+            }
+        } ) )
+        .pipe(sourcemaps.init({loadMaps: true}))
+        .pipe( sass( { errLogToConsole: true } ) )
+        .pipe( autoprefixer( 'last 2 versions' ) )
+        .pipe(sourcemaps.write(undefined, { sourceRoot: null }))
+        .pipe(gulp.dest(`${config.src.root}/css`))
+        .pipe(gulp.dest(`${config.dist}/css`))
+    return stream;
 });
 
 gulp.task('sass:watch', () => {
@@ -130,4 +135,4 @@ gulp.task('dev:dist', cb => {
     runSequence('build', 'serve:dist', cb);
 });
 
-gulp.task('default', ['build']);
+// gulp.task('default', ['build']);
