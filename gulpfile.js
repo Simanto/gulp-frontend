@@ -9,7 +9,6 @@ const cleanCSS = require('gulp-clean-css');
 const sourcemaps = require('gulp-sourcemaps');
 const imagemin = require( 'gulp-imagemin' );
 const newer = require("gulp-newer");
-const eslint = require("gulp-eslint");
 const concat = require('gulp-concat');
 const uglify = require('gulp-uglify');
 const del = require('del');
@@ -19,19 +18,19 @@ const rename = require("gulp-rename");
 // config
 const config = {
     src: {
-        root: './src',
-        styles: './src/sass/style.scss',
-        html: './src/*.html',
-        font: './src/fonts/**/*',
-        img: './src/img/main/**/*',
-        js: '.src/js/**/*'
+        root: 'src',
+        styles: 'src/sass/style.scss',
+        html: 'src/*.html',
+        font: 'src/fonts/**/*',
+        img: 'src/img/main/**/*',
+        js: 'src/js/**/*'
     },
-    dist: './build',
+    dist: 'build',
     browserSync: {
         port: 9000,
         baseDir: {
-            src: ['./src/'],
-            build: ['./build/']
+            src: ['src'],
+            build: ['build']
         }
     }
 };
@@ -104,6 +103,7 @@ function css() {
         .pipe(sourcemaps.write(undefined, { sourceRoot: null }))
         .pipe(gulp.dest(`${config.src.root}/css`))
         .pipe(gulp.dest(`${config.dist}/css`))
+        
         .pipe(cleanCSS({debug: true}, (details) => {
             console.log(`${details.name}: ${details.stats.originalSize}`);
             console.log(`${details.name}: ${details.stats.minifiedSize}`);
@@ -114,22 +114,23 @@ function css() {
         .pipe(browsersync.stream());
 }
 
+
 // Transpile, concatenate and minify scripts
 function scripts() {
+    var jsFile = [
+        "src/js/jquery.js",
+        "src/js/script.js"
+    ];
     return gulp
-        .src([
-            "./src/js/jquery.js",
-            "./src/js//script.js",
-        ])
+        .src(jsFile, { sourcemaps: true })
         .pipe(plumber())
         .pipe( concat( 'theme.js' ) )
-        .pipe(gulp.dest("./src/js/"))
-        .pipe(gulp.dest("./build/js/"))
+        .pipe(gulp.dest(`${config.src.root}/js`, { sourcemaps: true }))
+        .pipe(gulp.dest(`${config.dist}/js`, { sourcemaps: true }))
         .pipe(rename({ suffix: ".min" }))
-        .pipe( uglify() )
-        .pipe(gulp.dest("./src/js/"))
-        .pipe(gulp.dest("./build/js/"))
-        .pipe(browsersync.stream());
+        .pipe( uglify())
+        .pipe(gulp.dest(`${config.src.root}/js`, { sourcemaps: true }))
+        .pipe(gulp.dest(`${config.dist}/js`, { sourcemaps: true }));
 }
 
 
@@ -140,8 +141,8 @@ function clean() {
 
 // Watch files
 function watchFiles() {
-    gulp.watch("./src/sass/**/*", css);
-    gulp.watch("./src/js/**/*", scripts);
+    gulp.watch("src/sass/**/*", css);
+    gulp.watch("src/js/**/*", scripts);
 
     gulp.watch(
       [
@@ -157,7 +158,7 @@ function watchFiles() {
 // Tasks
 gulp.task("images", images);
 gulp.task("css", css);
-gulp.task("js", scripts);
+gulp.task("scripts", scripts);
 gulp.task("clean", clean);
 gulp.task("font", font);
 gulp.task("html", html);
@@ -166,7 +167,7 @@ gulp.task("html", html);
 // build
 gulp.task(
     "build",
-    gulp.series(clean, gulp.parallel(html, font, css, images, "js"))
+    gulp.series(clean, gulp.parallel(html, font, css, images, scripts))
 );
 
 // watch
